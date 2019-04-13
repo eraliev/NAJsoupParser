@@ -18,7 +18,7 @@ import java.io.IOException
 
 class ListNewsFragment : Fragment() {
 
-    private val url = "https://www.volzsky.ru/index.php?wx=16"
+    private val BASE_URL = "http://guobdd.kg"
     private val listNews = mutableListOf<News>()
     private lateinit var adapter: DataAdapter
 
@@ -29,8 +29,8 @@ class ListNewsFragment : Fragment() {
     private lateinit var viewModel: ListNewsViewModel
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.list_news_fragment, container, false)
     }
@@ -52,41 +52,21 @@ class ListNewsFragment : Fragment() {
 
     private fun getData() {
         try {
-            val document = Jsoup.connect(url).get()
-            val elements = document.select("div[class=btc_block-1]")
+            val document = Jsoup
+                    .connect(BASE_URL + "/allnews/category/NEWS")
+                    .get()
 
-            for (i in 0 until elements.size) {
-                val title = elements.select("div[class=btc_block-1_1 btc_h]")
-                    .select("a")
-                    .eq(i)
-                    .text()
+            val elements = document.select("article.one-news")
 
-                val description =
-                    elements.select("div[class=btc_block-1_2]")
-                        .select("p[class=btc_p]")
-                        .eq(i)
-                        .text()
+            elements.forEach { element ->
 
-                val linkImage =
-                    document.baseUri() +
-                            elements.select("div[class=btc_block-1_2]")
-                                .select("img")
-                                .eq(i)
-                                .attr("src")
+                val title = element.select("a").text()
+                val description = element.select("p").text()
+                             val linkImage = BASE_URL + "/" + element.select("a.one-news__image").first().attr("style").substringAfter("/").dropLast(2)
+                val additionalInfo = element.select("div.news-date").text()
+                        val linkDetails = BASE_URL + element.select("a.one-news__link").attr("href")
 
-                val additionalInfo = elements.select("div[class=btc_block-1_2]")
-                    .select("p[class=btc_p btc_inf]")
-                    .eq(i)
-                    .text()
-
-                val linkDetails =
-                    document.baseUri() +
-                    elements.select("div[class=btc_block-1_2]")
-                        .eq(i)
-                        .select("a")
-                        .attr("href")
-
-                listNews.add(News(title, description, linkImage, additionalInfo, linkDetails))
+              listNews.add(News(title, description, linkImage, additionalInfo, linkDetails))
             }
             GlobalScope.launch(Dispatchers.Main) {
                 adapter.set(listNews)
