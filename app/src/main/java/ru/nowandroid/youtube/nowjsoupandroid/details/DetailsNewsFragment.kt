@@ -19,7 +19,7 @@ import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
 class DetailsNewsFragment : Fragment(), CoroutineScope {
-
+  private val BASE_URL = "http://guobdd.kg/"
   private var job = Job()
   override val coroutineContext: CoroutineContext = Dispatchers.Main + job
 
@@ -43,31 +43,43 @@ class DetailsNewsFragment : Fragment(), CoroutineScope {
 
   private fun getData() {
     try {
-      val document = Jsoup.connect(arguments?.getString("link")).get()
-      val elements = document.select("div[id=bt_center]")
 
-      val title = elements.select("h1[class=title]").text()
+        //оригинальный метод       val document = Jsoup.connect(arguments?.getString("link")).get()
+        // но так вообще ничего не показывает s
 
-      val description = elements.select("div[id=n_n]").select("p").text()
+      val document = Jsoup
+              .connect(BASE_URL )
+              .get()
 
-      val linkImage = document.baseUri() +
-                      elements.select("div[class=mainfoto]").select("img").attr("src")
+      val elements = document.select("div.content-wrapper")
 
-      job = launch {
-        det_title.text = title.toString()
-        det_description.text = description.toString()
-        Picasso.with(activity)
-            .load(linkImage)
-            .into(det_main_photo)
+      elements.forEach { element ->
+
+       val title = element.select("h2.panel-title no-margin-bottom no-padding-bottom").attr("h2")
+        val description = element.select("p").text()
+               val linkImage = BASE_URL + "/" + element.select("a.one-news__image").first().attr("style").substringAfter("/").dropLast(2)
+
+     //  val additionalInfo = element.select("div.news-date").text()
+    //    val linkDetails = BASE_URL + element.select("a.one-news__link").attr("href")
+
+
+
+
+
+        job = launch {
+         det_title.text = title.toString()
+          det_description.text = description.toString()
+          Picasso.with(activity)
+                  .load(linkImage)
+                  .into(det_main_photo)
+        }
       }
+
     } catch (e: IOException) {
-      Log.e("TEST) ", e.message.toString())
+      Log.e("TEST) exception", e.message.toString())
     }
   }
 
-  override fun onDestroy() {
-    super.onDestroy()
-    job.cancel()
-  }
-
 }
+
+
